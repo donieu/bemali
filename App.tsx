@@ -1,52 +1,89 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
-import { BEM_ALI_DATA } from './constants';
+import { BEM_ALI_DATA, MARA_PERSONAL_DATA } from './constants';
 import { Icon } from './components/Icon';
 
 const App: React.FC = () => {
-  const [welcomeMsg, setWelcomeMsg] = useState<string>("Um espaço feito para o seu acolhimento.");
+  const [isPersonal, setIsPersonal] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [welcomeMsg, setWelcomeMsg] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [activeService, setActiveService] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
+  const currentData = useMemo(() => isPersonal ? MARA_PERSONAL_DATA : BEM_ALI_DATA, [isPersonal]);
+
+  useEffect(() => {
+    if (isPersonal) {
+      document.body.classList.add('personal-mode');
+    } else {
+      document.body.classList.remove('personal-mode');
+    }
+  }, [isPersonal]);
+
   useEffect(() => {
     const fetchWelcome = async () => {
+      setLoading(true);
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const prompt = isPersonal 
+          ? "Escreva um manifesto de uma frase curta (max 8 palavras) e poderosa sobre psicologia clínica para o perfil pessoal da Dra. Mara Magalhães."
+          : "Escreva um manifesto de uma frase curta (max 8 palavras) e acolhedora sobre saúde mental para a marca 'Bem Ali'.";
+        
         const response = await ai.models.generateContent({
           model: 'gemini-3-flash-preview',
-          contents: "Escreva um manifesto de uma frase curta e acolhedora sobre saúde mental para a marca 'Bem Ali'. Máximo 8 palavras.",
+          contents: prompt,
           config: { temperature: 0.7 }
         });
         if (response.text) setWelcomeMsg(response.text.trim().replace(/"/g, ''));
       } catch (e) {
-        console.error(e);
+        setWelcomeMsg(isPersonal ? "Transformando dor em crescimento consciente." : "Um espaço feito para o seu acolhimento.");
       } finally {
         setLoading(false);
       }
     };
     fetchWelcome();
-  }, []);
+  }, [isPersonal]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setIsTransitioning(true);
       setTimeout(() => {
-        setActiveService((prev) => (prev + 1) % BEM_ALI_DATA.services.length);
+        setActiveService((prev) => (prev + 1) % currentData.services.length);
         setIsTransitioning(false);
       }, 500);
     }, 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentData.services.length]);
 
-  return (
+  const toggleProfile = () => {
+    setIsSwitching(true);
+    if (isPersonal) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    setTimeout(() => {
+      setIsPersonal(!isPersonal);
+      setActiveService(0);
+      setIsSwitching(false);
+    }, 800);
+  };
+
+  // --- COMPONENTE MODO INSTITUCIONAL (BENTO GRID - EXATAMENTE COMO ESTAVA) ---
+  const InstitutionalView = () => (
     <div className="h-screen w-full flex flex-col p-4 md:p-6 lg:p-10 bg-transparent overflow-hidden">
       {/* HEADER */}
       <header className="flex items-center justify-between mb-4 md:mb-6 animate-fade-up shrink-0">
         <div className="flex items-center gap-4 md:gap-6">
-          <div className="w-16 h-16 md:w-24 md:h-24 rounded-full glass p-1 animate-float shadow-xl border-2 border-white relative z-10 shrink-0">
+          <div 
+            onClick={toggleProfile}
+            className="w-16 h-16 md:w-24 md:h-24 rounded-full glass p-1 animate-float shadow-xl border-2 border-white relative z-50 shrink-0 cursor-pointer group"
+          >
+            <div className="absolute -inset-1 bg-gradient-to-tr from-[#A3B18A]/20 to-transparent rounded-full animate-pulse opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <img src={BEM_ALI_DATA.avatar} alt="Logo Bem Ali" className="w-full h-full object-cover rounded-full" />
+            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-md border border-[#A3B18A]/20">
+              <Icon name="star" className="w-3 h-3 text-[#A3B18A]" />
+            </div>
           </div>
           <div className="flex flex-col min-w-0">
             <h1 className="font-serif text-2xl md:text-4xl font-bold tracking-tight leading-none text-[#8B5E52] truncate">{BEM_ALI_DATA.name}</h1>
@@ -54,7 +91,9 @@ const App: React.FC = () => {
             
             <div className="flex items-center gap-1.5 mt-2 text-[#8B5E52] opacity-80">
               <Icon name="map" className="w-3 h-3 md:w-3.5 md:h-3.5 shrink-0" />
-              <span className="text-[9px] md:text-[10px] font-bold tracking-wide truncate">JK SHOPPING • Brasília/DF</span>
+              <span className="text-[8px] md:text-[10px] font-bold tracking-wide truncate max-w-[200px] md:max-w-none">
+                JK Shopping - Av. Hélio Prates, 1001, Taguatinga Centro, Brasília - DF
+              </span>
             </div>
           </div>
         </div>
@@ -141,7 +180,7 @@ const App: React.FC = () => {
             <div className="h-px flex-1 bg-gradient-to-r from-[#e8d8d2] to-transparent"></div>
           </div>
           <div className="grid grid-cols-3 gap-2 md:gap-4 overflow-hidden">
-            {BEM_ALI_DATA.team.map((m, i) => (
+            {BEM_ALI_DATA.team?.map((m, i) => (
               <div key={i} className="flex flex-col min-w-0">
                 <span className="text-[9px] md:text-xs font-bold text-[#8B5E52] truncate leading-tight">{m.name.split(' ').slice(0, 2).join(' ')}</span>
                 <span className="text-[7px] md:text-[9px] text-[#A3B18A] font-black uppercase mt-0.5 tracking-tighter opacity-90 truncate">{m.role.split(' ')[0]}</span>
@@ -157,7 +196,7 @@ const App: React.FC = () => {
           </div>
           <div className="animate-marquee pl-24 pr-4">
             <div className="flex gap-10 items-center">
-              {[...BEM_ALI_DATA.convenios, ...BEM_ALI_DATA.convenios].map((c, i) => (
+              {(BEM_ALI_DATA.convenios || []).concat(BEM_ALI_DATA.convenios || []).map((c, i) => (
                 <span key={i} className="text-[8px] md:text-[9px] font-bold text-[#8B5E52]/60 uppercase tracking-[0.1em] whitespace-nowrap">
                   {c}
                 </span>
@@ -193,6 +232,153 @@ const App: React.FC = () => {
            <p className="text-[7px] md:text-[8px] text-[#A3B18A] font-bold italic truncate">Brasília • DF</p>
         </div>
       </footer>
+    </div>
+  );
+
+  // --- COMPONENTE MODO PESSOAL (PREMIUM SCROLLABLE) ---
+  const PersonalView = () => (
+    <div className="min-h-screen w-full flex flex-col overflow-x-hidden animate-fade-up">
+      {/* FLOATING TOGGLE TO GO BACK */}
+      <button 
+        onClick={toggleProfile}
+        className="fixed top-6 right-6 z-[100] glass p-3 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all border-[#A3B18A]/30 group"
+      >
+        <div className="flex items-center gap-3 pr-2">
+          <div className="w-8 h-8 rounded-full border border-white overflow-hidden">
+             <img src={BEM_ALI_DATA.avatar} className="w-full h-full object-cover" />
+          </div>
+          <span className="text-[9px] font-black uppercase tracking-widest text-[#8B5E52] hidden group-hover:block transition-all">Ir para Institucional</span>
+        </div>
+      </button>
+
+      {/* HERO SECTION */}
+      <section className="h-[90vh] md:h-screen w-full relative flex flex-col items-center justify-end md:justify-center p-8 md:p-24 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={MARA_PERSONAL_DATA.avatar} 
+            className="w-full h-full object-cover grayscale-[20%] sepia-[10%] opacity-90 transition-transform duration-[10s] hover:scale-110" 
+            alt="Mara Magalhães"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#fdfaf9] via-[#fdfaf9]/30 to-transparent"></div>
+        </div>
+        
+        <div className="relative z-10 text-center md:text-left md:w-full">
+          <p className="text-[#A3B18A] uppercase tracking-[0.6em] font-black text-xs mb-4 animate-fade-up">Psicóloga Clínica</p>
+          <h1 className="font-serif text-5xl md:text-[8rem] font-bold text-[#8B5E52] leading-[0.85] mb-8 animate-fade-up" style={{ animationDelay: '0.2s' }}>
+            Mara <br className="hidden md:block"/> Magalhães
+          </h1>
+          <div className="flex flex-col md:flex-row gap-8 items-center md:items-end animate-fade-up" style={{ animationDelay: '0.4s' }}>
+            <p className="max-w-md text-sm md:text-xl font-medium text-[#8B5E52]/70 italic leading-relaxed">
+              "{welcomeMsg}"
+            </p>
+            <div className="h-px w-24 bg-[#A3B18A]/50 hidden md:block mb-4"></div>
+            <p className="text-[10px] uppercase tracking-widest font-black text-[#A3B18A]">CRP 01/12345</p>
+          </div>
+        </div>
+
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-40">
+           <div className="w-px h-12 bg-[#8B5E52]"></div>
+        </div>
+      </section>
+
+      {/* BIO SECTION */}
+      <section className="py-24 px-8 md:px-32 bg-white flex flex-col md:flex-row gap-16 items-center">
+        <div className="flex-1">
+          <h2 className="font-serif text-4xl md:text-6xl text-[#8B5E52] mb-8">O acolhimento como <br/> ferramenta de cura.</h2>
+          <p className="text-lg md:text-2xl text-[#8B5E52]/80 leading-relaxed mb-10 font-light">
+            {MARA_PERSONAL_DATA.fullBio}
+          </p>
+          <div className="grid grid-cols-2 gap-8">
+            {MARA_PERSONAL_DATA.stats.map((s, i) => (
+              <div key={i} className="border-l-2 border-[#A3B18A] pl-6 py-2">
+                <span className="block text-3xl font-black text-[#8B5E52]">{s.value}</span>
+                <span className="text-[10px] uppercase tracking-widest text-[#A3B18A] font-bold">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 w-full h-[400px] md:h-[600px] rounded-[3rem] overflow-hidden shadow-2xl rotate-3 transition-transform hover:rotate-0 duration-700">
+           <img src="https://images.unsplash.com/photo-1544027994-3fd996f01905?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover" />
+        </div>
+      </section>
+
+      {/* FOCUS AREA */}
+      <section className="py-24 px-8 bg-[#fdfaf9]">
+         <div className="text-center mb-16">
+            <span className="text-[#A3B18A] font-black uppercase tracking-[0.4em] text-[10px]">Minha Atuação</span>
+            <h2 className="font-serif text-4xl md:text-6xl text-[#8B5E52] mt-4">Áreas de Especialidade</h2>
+         </div>
+         <div className="flex flex-wrap justify-center gap-4 max-w-5xl mx-auto">
+            {MARA_PERSONAL_DATA.focus?.map((f, i) => (
+              <div key={i} className="px-8 py-4 bg-white border border-[#e8d8d2] rounded-full text-[#8B5E52] font-bold text-sm md:text-lg hover:bg-[#8B5E52] hover:text-white transition-all cursor-default shadow-sm">
+                {f}
+              </div>
+            ))}
+         </div>
+      </section>
+
+      {/* SERVICES PREMIUM */}
+      <section className="py-32 px-8 md:px-32 bg-[#8B5E52] text-white">
+        <div className="grid md:grid-cols-3 gap-12">
+          {MARA_PERSONAL_DATA.services.map((s, i) => (
+            <div key={i} className="group p-8 border border-white/10 rounded-[2rem] hover:bg-white/5 transition-all">
+              <Icon name={s.iconName} className="w-12 h-12 mb-8 text-[#A3B18A]" />
+              <h3 className="font-serif text-3xl mb-4">{s.title}</h3>
+              <p className="text-white/70 text-lg leading-relaxed mb-8">{s.description}</p>
+              <div className="w-8 h-px bg-[#A3B18A] group-hover:w-full transition-all duration-700"></div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="py-24 px-8 md:px-32 bg-white italic font-serif text-2xl md:text-4xl text-center text-[#8B5E52]">
+        <div className="max-w-4xl mx-auto">
+          <p className="mb-8">"Acredito que cada ser humano é um universo a ser explorado com respeito, ética e, acima de tudo, acolhimento."</p>
+          <span className="text-sm font-sans uppercase tracking-[0.4em] font-black text-[#A3B18A]">- Mara Magalhães</span>
+        </div>
+      </section>
+
+      {/* CONTACT / CTA */}
+      <section className="py-32 px-8 md:px-32 flex flex-col items-center justify-center text-center">
+        <h2 className="font-serif text-5xl md:text-8xl text-[#8B5E52] mb-12">Vamos iniciar sua <br/> jornada?</h2>
+        <a 
+          href={MARA_PERSONAL_DATA.links[0].url}
+          className="px-12 py-6 bg-[#8B5E52] text-white rounded-full text-xl font-bold uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-4"
+        >
+          Solicitar Agendamento
+          <Icon name="whatsapp" className="w-6 h-6" />
+        </a>
+        
+        <div className="mt-24 flex flex-col items-center gap-6">
+          <div className="flex gap-10">
+            {MARA_PERSONAL_DATA.socials.map((s, i) => (
+              <a key={i} href={s.url} className="text-[#8B5E52] hover:text-[#A3B18A] transition-colors">
+                <Icon name={s.platform} className="w-8 h-8" />
+              </a>
+            ))}
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#A3B18A] opacity-60">Mara Magalhães • Clínica de Psicologia</p>
+        </div>
+      </section>
+    </div>
+  );
+
+  return (
+    <div className={`relative transition-all duration-700 ${isSwitching ? 'scale-[0.98] blur-md opacity-50' : 'scale-100 blur-0 opacity-100'}`}>
+      {isPersonal ? <PersonalView /> : <InstitutionalView />}
+      
+      {/* OVERLAY DE TRANSIÇÃO */}
+      {isSwitching && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#fdfaf9]/80 backdrop-blur-xl animate-pulse">
+          <div className="flex flex-col items-center gap-6 text-center px-8">
+            <div className="w-24 h-24 rounded-full border-4 border-t-[#8B5E52] border-[#A3B18A]/20 animate-spin"></div>
+            <p className="font-serif text-2xl text-[#8B5E52] italic animate-fade-up">
+              {isPersonal ? "Retornando ao Bem Ali..." : "Abrindo perfil de Mara Magalhães..."}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
