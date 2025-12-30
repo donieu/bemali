@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useMemo, memo, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
-import { BEM_ALI_DATA, MARA_PERSONAL_DATA, ServiceDetail, TeamMember } from './constants';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { Icon } from './components/Icon';
+import { BEM_ALI_DATA, MARA_PERSONAL_DATA, ServiceDetail, TeamMember } from './constants';
 
 // --- SUB-COMPONENTES MEMOIZADOS ---
 
@@ -346,7 +346,7 @@ const App: React.FC = () => {
         });
         if (response.text) setWelcomeMsg(response.text.trim().replace(/"/g, ''));
       } catch (e) {
-        setWelcomeMsg(isPersonal ? "Transformando dor em crescimento consciente." : "Um espaço feito para o seu acolhimento.");
+        setWelcomeMsg(isPersonal ? "Transformando dor em crescimento consciente." : "Sua nova fase começa na BemAli.");
       } finally {
         setLoading(false);
       }
