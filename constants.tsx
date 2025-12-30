@@ -32,7 +32,7 @@ export const BEM_ALI_DATA: ExtendedBrandData = {
   handle: "Espaço de Acolhimento",
   slogan: "Cuidado especializado para você e sua família.",
   bio: "Saúde mental integral com equipe multidisciplinar no JK Shopping.",
-  avatar: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=400&h=400",
+  avatar: "/bemali.png",
   stats: [
     { value: "2+", label: "Anos" },
     { value: "1k+", label: "Vidas" },
