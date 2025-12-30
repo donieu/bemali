@@ -6,6 +6,47 @@ import { Icon } from './components/Icon';
 
 // --- SUB-COMPONENTES MEMOIZADOS ---
 
+const AnimatedStat = memo(({ value, label, icon }: { value: string, label: string, icon: string }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const numericPart = parseInt(value.replace(/[^0-9]/g, '')) || 0;
+  const suffix = value.replace(/[0-9]/g, '');
+
+  useEffect(() => {
+    let start = 0;
+    const duration = 2000;
+    const increment = numericPart / (duration / 16);
+    
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= numericPart) {
+        setDisplayValue(numericPart);
+        clearInterval(timer);
+      } else {
+        setDisplayValue(Math.floor(start));
+      }
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, [numericPart]);
+
+  return (
+    <div className="flex flex-col items-center group cursor-default relative py-2">
+      <div className="absolute inset-0 bg-[#A3B18A]/5 scale-0 group-hover:scale-150 rounded-full blur-2xl transition-transform duration-700 pointer-events-none"></div>
+      <div className="relative z-10 flex flex-col items-center transition-transform duration-500 group-hover:-translate-y-1">
+        <div className="mb-1 opacity-20 group-hover:opacity-40 transition-opacity">
+           <Icon name={icon} className="w-4 h-4 md:w-5 md:h-5 text-[#8B5E52]" />
+        </div>
+        <span className="text-2xl md:text-4xl font-black text-[#8B5E52] tracking-tighter">
+          {displayValue}{suffix}
+        </span>
+        <span className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] font-black text-[#A3B18A] mt-1 group-hover:text-[#8B5E52] transition-colors">
+          {label}
+        </span>
+      </div>
+    </div>
+  );
+});
+
 const FAQItem = memo(({ question, answer }: { question: string, answer: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   const itemRef = useRef<HTMLDivElement>(null);
@@ -14,9 +55,7 @@ const FAQItem = memo(({ question, answer }: { question: string, answer: string }
     const willOpen = !isOpen;
     setIsOpen(willOpen);
     
-    // Executa a rolagem suave se o item estiver sendo aberto
     if (willOpen && itemRef.current) {
-      // Pequeno delay via requestAnimationFrame para garantir que o DOM atualizou
       requestAnimationFrame(() => {
         itemRef.current?.scrollIntoView({ 
           behavior: 'smooth', 
@@ -324,7 +363,6 @@ const App: React.FC = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceDetail | null>(null);
 
-  // Estados para a equipe
   const [isStaffSheetOpen, setIsStaffSheetOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<TeamMember | null>(null);
 
@@ -365,7 +403,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     document.body.className = isPersonal ? 'personal-mode antialiased' : 'antialiased';
-    document.body.style.overflow = (isSheetOpen || isStaffSheetOpen || isSwitching) ? 'hidden' : (isPersonal ? 'auto' : 'hidden');
+    document.body.style.overflow = (isSheetOpen || isStaffSheetOpen || isSwitching) ? 'hidden' : 'auto';
   }, [isPersonal, isSheetOpen, isStaffSheetOpen, isSwitching]);
 
   const handleNextService = () => {
@@ -389,7 +427,7 @@ const App: React.FC = () => {
   const toggleProfile = () => {
     setIsStaffSheetOpen(false);
     setIsSwitching(true);
-    if (isPersonal) window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => {
       setIsPersonal(!isPersonal);
       setActiveService(0);
@@ -406,6 +444,8 @@ const App: React.FC = () => {
     setSelectedStaff(member);
     setIsStaffSheetOpen(true);
   };
+
+  const statIcons = ['calendar', 'users', 'heart'];
 
   if (isPersonal) {
     return (
@@ -429,7 +469,6 @@ const App: React.FC = () => {
             </div>
           </button>
 
-          {/* HERO PERSONALIZADO */}
           <section className="h-[90vh] md:h-screen w-full relative flex flex-col items-center justify-end md:justify-center p-8 md:p-24 overflow-hidden">
             <div className="absolute inset-0 z-0">
               <img 
@@ -451,7 +490,6 @@ const App: React.FC = () => {
             </div>
           </section>
 
-          {/* MINHA ABORDAGEM */}
           <section className="py-24 px-8 md:px-32 bg-white">
             <div className="max-w-7xl mx-auto">
               <div className="mb-16">
@@ -472,7 +510,6 @@ const App: React.FC = () => {
             </div>
           </section>
 
-          {/* TRAJETÓRIA ACADÊMICA */}
           <section className="py-32 px-8 md:px-32 bg-[#F5E6E0]/20">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-20">
               <div className="flex-1">
@@ -481,10 +518,7 @@ const App: React.FC = () => {
                 <p className="text-xl text-[#8B5E52]/80 leading-relaxed font-light mb-12">O estudo contínuo é o que me permite oferecer um suporte ético e atualizado às demandas complexas da vida moderna.</p>
                 <div className="grid grid-cols-2 gap-8">
                   {MARA_PERSONAL_DATA.stats.map((s, i) => (
-                    <div key={i} className="border-l-2 border-[#A3B18A] pl-6 py-2">
-                      <span className="block text-3xl font-black text-[#8B5E52]">{s.value}</span>
-                      <span className="text-[10px] uppercase tracking-widest text-[#A3B18A] font-bold">{s.label}</span>
-                    </div>
+                    <AnimatedStat key={i} value={s.value} label={s.label} icon={statIcons[i]} />
                   ))}
                 </div>
               </div>
@@ -502,7 +536,6 @@ const App: React.FC = () => {
             </div>
           </section>
 
-          {/* MODALIDADES (REUTILIZADA COM ESTILO PESSOAL) */}
           <section className="py-32 px-8 md:px-32 bg-[#8B5E52] text-white">
             <div className="max-w-7xl mx-auto">
               <div className="text-center mb-20">
@@ -532,7 +565,6 @@ const App: React.FC = () => {
             </div>
           </section>
 
-          {/* FAQ */}
           <section className="py-32 px-8 md:px-32 bg-white">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-20">
@@ -547,7 +579,6 @@ const App: React.FC = () => {
             </div>
           </section>
 
-          {/* FOOTER PERSONAL */}
           <section className="py-32 px-8 md:px-32 flex flex-col items-center text-center bg-[#fdfaf9]">
             <h2 className="font-serif text-5xl md:text-[8rem] text-[#8B5E52] mb-12 leading-none">Inicie sua jornada.</h2>
             <a href={MARA_PERSONAL_DATA.links[0].url} className="px-16 py-8 bg-[#8B5E52] text-white rounded-[2rem] text-xl font-bold uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-6">
@@ -584,9 +615,12 @@ const App: React.FC = () => {
           <div className="flex flex-col min-w-0">
             <h1 className="font-serif text-2xl md:text-4xl font-bold tracking-tight leading-none text-[#8B5E52] truncate">{BEM_ALI_DATA.name}</h1>
             <p className="text-[9px] md:text-[10px] uppercase tracking-[0.25em] font-bold text-[#A3B18A] mt-1.5 truncate">{BEM_ALI_DATA.handle}</p>
+            <div className="flex items-center gap-1.5 mt-1 opacity-70">
+              <Icon name="map" className="w-2.5 h-2.5 text-[#A3B18A]" />
+              <span className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.15em] text-[#8B5E52]/60">JK Shopping</span>
+            </div>
           </div>
         </div>
-        <div className="hidden sm:flex px-4 py-2 glass rounded-full text-[10px] font-black tracking-widest text-[#8B5E52] uppercase">JK Shopping</div>
       </header>
 
       <div className="mb-3 md:mb-5 animate-fade-up shrink-0">
@@ -605,18 +639,49 @@ const App: React.FC = () => {
           onPrev={handlePrevService}
         />
 
-        <div className="col-span-3 row-span-3 glass rounded-3xl p-3 flex items-center justify-around shadow-sm">
+        <div className="col-span-3 row-span-3 glass rounded-3xl p-3 flex items-center justify-around shadow-sm overflow-hidden relative group/stats">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-[#A3B18A]/5 pointer-events-none"></div>
           {BEM_ALI_DATA.stats.map((stat, i) => (
-            <div key={i} className="text-center">
-              <span className="block text-lg md:text-2xl font-black text-[#8B5E52]">{stat.value}</span>
-              <span className="text-[8px] md:text-[9px] uppercase tracking-widest font-black text-[#A3B18A]">{stat.label}</span>
-            </div>
+            <AnimatedStat key={i} value={stat.value} label={stat.label} icon={statIcons[i]} />
           ))}
         </div>
 
-        <a href={BEM_ALI_DATA.links[0].url} className="col-span-3 row-span-3 bento-item bg-[#8B5E52] rounded-3xl p-3 flex flex-col items-center justify-center text-white shadow-xl">
-          <Icon name="whatsapp" className="w-7 h-7 md:w-9 md:h-9 mb-1.5" />
-          <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em]">Agendar</span>
+        {/* --- BOTÃO DE AGENDAMENTO PREMIUM (ESTÁTICO & IMPACTANTE) --- */}
+        <a 
+          href={BEM_ALI_DATA.links[0].url} 
+          className="col-span-3 row-span-3 relative overflow-hidden rounded-[2.5rem] flex flex-col items-center justify-center text-white shadow-2xl active:scale-95 transition-transform duration-300"
+        >
+          {/* Base de Gradiente com Textura Visual */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#6a443b] via-[#8B5E52] to-[#A3B18A] opacity-100"></div>
+          
+          {/* Spotlight Estático Central (Glow Permanente) */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-white/20 blur-[40px] rounded-full pointer-events-none"></div>
+
+          {/* Borda Superior de "Brilho de Vidro" */}
+          <div className="absolute top-0 left-4 right-4 h-[1px] bg-white/30 rounded-full"></div>
+
+          {/* Conteúdo do Card */}
+          <div className="relative z-10 flex flex-col items-center text-center">
+            {/* Ícone com Batida de Coração Sutil */}
+            <div className="relative mb-2">
+              <div className="absolute inset-0 bg-[#A3B18A] blur-lg opacity-40 scale-125 animate-pulse"></div>
+              <Icon name="whatsapp" className="w-8 h-8 md:w-10 md:h-10 relative z-20 drop-shadow-lg" />
+            </div>
+
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[12px] md:text-[14px] font-black uppercase tracking-[0.3em] leading-none text-white drop-shadow-md">
+                Agendar
+              </span>
+              <span className="text-[7px] md:text-[8px] font-medium text-white/70 uppercase tracking-[0.2em] italic">
+                Cuidado Humanizado
+              </span>
+            </div>
+          </div>
+
+          {/* Detalhe Minimalista no Canto */}
+          <div className="absolute bottom-3 right-5 opacity-30">
+            <Icon name="check" className="w-3 h-3 text-white" />
+          </div>
         </a>
 
         <div className="col-span-6 row-span-4 glass rounded-[2.5rem] p-4 md:p-6 flex flex-col justify-center shadow-sm">
