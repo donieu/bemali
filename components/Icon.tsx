@@ -94,6 +94,18 @@ export const Icon: React.FC<IconProps> = ({ name, className = "w-6 h-6" }) => {
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
       );
+    case 'chevron-left':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      );
+    case 'chevron-right':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      );
     default:
       return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>

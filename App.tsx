@@ -1,10 +1,104 @@
 
 import React, { useState, useEffect, useMemo, memo, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
-import { BEM_ALI_DATA, MARA_PERSONAL_DATA, ServiceDetail } from './constants';
+import { BEM_ALI_DATA, MARA_PERSONAL_DATA, ServiceDetail, TeamMember } from './constants';
 import { Icon } from './components/Icon';
 
 // --- SUB-COMPONENTES MEMOIZADOS ---
+
+const FAQItem = memo(({ question, answer }: { question: string, answer: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="border-b border-[#8B5E52]/10 py-6">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex justify-between items-center text-left"
+      >
+        <span className="text-xl md:text-2xl font-serif text-[#8B5E52]">{question}</span>
+        <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+          <Icon name="chevron-right" className="w-6 h-6 rotate-90" />
+        </div>
+      </button>
+      <div className={`overflow-hidden transition-all duration-500 ${isOpen ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+        <p className="text-lg text-[#8B5E52]/70 leading-relaxed">{answer}</p>
+      </div>
+    </div>
+  );
+});
+
+const StaffBottomSheet = memo(({ isOpen, onClose, staff, onSeeFullProfile }: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  staff: TeamMember | null,
+  onSeeFullProfile?: () => void
+}) => {
+  if (!staff) return null;
+
+  return (
+    <>
+      <div 
+        className={`fixed inset-0 z-[400] bg-black/60 backdrop-blur-sm transition-opacity duration-500 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={onClose}
+      />
+      <div 
+        className={`fixed bottom-0 left-0 right-0 z-[401] bg-[#fdfaf9] rounded-t-[3.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.3)] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] max-h-[92vh] overflow-y-auto ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
+      >
+        <div className="max-w-2xl mx-auto px-6 py-10 md:px-12">
+          <div className="flex justify-between items-center mb-10">
+             <div className="w-12 h-1.5 bg-[#8B5E52]/10 rounded-full" />
+             <button onClick={onClose} className="p-3 bg-[#8B5E52]/5 rounded-full hover:bg-[#8B5E52]/10 transition-colors">
+                <Icon name="close" className="w-5 h-5 text-[#8B5E52]" />
+             </button>
+          </div>
+
+          <div className="flex flex-col items-center text-center mb-12">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl mb-6 scale-110">
+              <img src={staff.avatar} alt={staff.name} className="w-full h-full object-cover" />
+            </div>
+            <h3 className="font-serif text-3xl md:text-5xl text-[#8B5E52] font-bold mb-2">{staff.name}</h3>
+            <p className="text-[#A3B18A] font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">{staff.role} • CRP {staff.crp}</p>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-2 mb-10">
+            {staff.specialties.map((s, i) => (
+              <span key={i} className="px-4 py-1.5 bg-[#A3B18A]/10 text-[#A3B18A] text-[10px] font-black uppercase tracking-widest rounded-full">
+                {s}
+              </span>
+            ))}
+          </div>
+
+          <section className="mb-10 text-center md:text-left">
+            <h4 className="font-serif text-xl text-[#8B5E52] mb-4 border-b border-[#8B5E52]/5 pb-2">Sobre o Profissional</h4>
+            <p className="text-lg text-[#8B5E52]/80 leading-relaxed italic">"{staff.bio}"</p>
+          </section>
+
+          <section className="mb-10 text-center md:text-left">
+            <h4 className="font-serif text-xl text-[#8B5E52] mb-4 border-b border-[#8B5E52]/5 pb-2">Abordagem Técnica</h4>
+            <p className="text-lg text-[#8B5E52]/70 font-medium">{staff.approach}</p>
+          </section>
+
+          <div className="flex flex-col gap-4 mt-12 mb-6">
+            <a 
+              href={`https://wa.me/5561999998888?text=Olá,%20gostaria%20de%20agendar%20um%20atendimento%20com%20o(a)%20${staff.name}`}
+              className="w-full py-6 bg-[#8B5E52] text-white rounded-[2rem] font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-4 shadow-xl"
+            >
+              Agendar com {staff.name.split(' ')[0]} <Icon name="whatsapp" className="w-6 h-6" />
+            </a>
+            
+            {staff.name.includes("Mara") && onSeeFullProfile && (
+              <button 
+                onClick={onSeeFullProfile}
+                className="w-full py-5 bg-transparent border-2 border-[#8B5E52]/20 text-[#8B5E52] rounded-[2rem] font-bold uppercase tracking-widest hover:bg-[#8B5E52]/5 transition-all"
+              >
+                Ver Perfil Completo
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+});
 
 const BottomSheet = memo(({ isOpen, onClose, service, data }: { isOpen: boolean, onClose: () => void, service: ServiceDetail | null, data: any }) => {
   if (!service) return null;
@@ -110,11 +204,15 @@ const ServiceCard = memo(({ activeService, isTransitioning, data, onOpenSheet, o
   };
 
   const handleSwipe = () => {
-    if (touchStartX.current - touchEndX.current > 50) {
-      onNext();
-    }
-    if (touchStartX.current - touchEndX.current < -50) {
-      onPrev();
+    const threshold = 50; 
+    const distance = touchStartX.current - touchEndX.current;
+    
+    if (Math.abs(distance) > threshold) {
+      if (distance > 0) {
+        onNext(); 
+      } else {
+        onPrev(); 
+      }
     }
   };
 
@@ -122,7 +220,8 @@ const ServiceCard = memo(({ activeService, isTransitioning, data, onOpenSheet, o
     <div 
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="col-span-6 row-span-5 md:row-span-6 glass rounded-[2rem] p-5 md:p-8 lg:p-10 relative overflow-hidden flex flex-col justify-center shadow-md border border-white/80 transition-all duration-500 cursor-grab active:cursor-grabbing"
+      style={{ touchAction: 'pan-y' }}
+      className="col-span-6 row-span-5 md:row-span-6 glass rounded-[2rem] p-5 md:p-8 lg:p-10 relative overflow-hidden flex flex-col justify-center shadow-md border border-white/80 transition-all duration-500 cursor-grab active:cursor-grabbing select-none"
     >
       <div className="absolute top-5 right-6 flex gap-1.5 z-10">
         {data.services.map((_: any, i: number) => (
@@ -158,10 +257,9 @@ const ServiceCard = memo(({ activeService, isTransitioning, data, onOpenSheet, o
         </div>
       </div>
       
-      {/* Indicadores de Swipe Visuais (Desktop only or for clarity) */}
-      <div className="absolute bottom-5 left-5 right-5 flex justify-between opacity-10 pointer-events-none sm:hidden">
+      <div className="absolute bottom-5 left-5 right-5 flex justify-between opacity-10 pointer-events-none sm:hidden items-center">
         <Icon name="chevron-left" className="w-4 h-4" />
-        <span className="text-[8px] uppercase tracking-widest font-bold">Arraste para navegar</span>
+        <span className="text-[8px] uppercase tracking-[0.15em] font-bold">Arraste para navegar</span>
         <Icon name="chevron-right" className="w-4 h-4" />
       </div>
     </div>
@@ -197,6 +295,10 @@ const App: React.FC = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceDetail | null>(null);
 
+  // Estados para a equipe
+  const [isStaffSheetOpen, setIsStaffSheetOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<TeamMember | null>(null);
+
   const servicesCount = isPersonal ? MARA_PERSONAL_DATA.services.length : BEM_ALI_DATA.services.length;
 
   useEffect(() => {
@@ -225,19 +327,20 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!isSheetOpen) {
+      if (!isSheetOpen && !isStaffSheetOpen) {
         handleNextService();
       }
     }, 8000);
     return () => clearInterval(interval);
-  }, [isPersonal, isSheetOpen, servicesCount]);
+  }, [isPersonal, isSheetOpen, isStaffSheetOpen, servicesCount]);
 
   useEffect(() => {
     document.body.className = isPersonal ? 'personal-mode antialiased' : 'antialiased';
-    document.body.style.overflow = (isSheetOpen || isSwitching) ? 'hidden' : (isPersonal ? 'auto' : 'hidden');
-  }, [isPersonal, isSheetOpen, isSwitching]);
+    document.body.style.overflow = (isSheetOpen || isStaffSheetOpen || isSwitching) ? 'hidden' : (isPersonal ? 'auto' : 'hidden');
+  }, [isPersonal, isSheetOpen, isStaffSheetOpen, isSwitching]);
 
   const handleNextService = () => {
+    if (isTransitioning) return;
     setIsTransitioning(true);
     setTimeout(() => {
       setActiveService((prev) => (prev + 1) % servicesCount);
@@ -246,6 +349,7 @@ const App: React.FC = () => {
   };
 
   const handlePrevService = () => {
+    if (isTransitioning) return;
     setIsTransitioning(true);
     setTimeout(() => {
       setActiveService((prev) => (prev - 1 + servicesCount) % servicesCount);
@@ -254,6 +358,7 @@ const App: React.FC = () => {
   };
 
   const toggleProfile = () => {
+    setIsStaffSheetOpen(false);
     setIsSwitching(true);
     if (isPersonal) window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => {
@@ -266,6 +371,11 @@ const App: React.FC = () => {
   const handleOpenSheet = (service: ServiceDetail) => {
     setSelectedService(service);
     setIsSheetOpen(true);
+  };
+
+  const handleOpenStaffSheet = (member: TeamMember) => {
+    setSelectedStaff(member);
+    setIsStaffSheetOpen(true);
   };
 
   if (isPersonal) {
@@ -284,6 +394,7 @@ const App: React.FC = () => {
             </div>
           </button>
 
+          {/* HERO PERSONALIZADO */}
           <section className="h-[90vh] md:h-screen w-full relative flex flex-col items-center justify-end md:justify-center p-8 md:p-24 overflow-hidden">
             <div className="absolute inset-0 z-0">
               <img src={MARA_PERSONAL_DATA.avatar} className="w-full h-full object-cover grayscale-[20%] sepia-[10%] opacity-90 transition-transform duration-[10s] hover:scale-110" alt="Mara Magalhães" />
@@ -300,24 +411,58 @@ const App: React.FC = () => {
             </div>
           </section>
 
-          <section className="py-24 px-8 md:px-32 bg-white flex flex-col md:flex-row gap-16 items-center">
-            <div className="flex-1">
-              <h2 className="font-serif text-4xl md:text-6xl text-[#8B5E52] mb-8">O acolhimento como ferramenta de cura.</h2>
-              <p className="text-lg md:text-2xl text-[#8B5E52]/80 leading-relaxed mb-10 font-light">{MARA_PERSONAL_DATA.fullBio}</p>
-              <div className="grid grid-cols-2 gap-8">
-                {MARA_PERSONAL_DATA.stats.map((s, i) => (
-                  <div key={i} className="border-l-2 border-[#A3B18A] pl-6 py-2">
-                    <span className="block text-3xl font-black text-[#8B5E52]">{s.value}</span>
-                    <span className="text-[10px] uppercase tracking-widest text-[#A3B18A] font-bold">{s.label}</span>
+          {/* MINHA ABORDAGEM */}
+          <section className="py-24 px-8 md:px-32 bg-white">
+            <div className="max-w-7xl mx-auto">
+              <div className="mb-16">
+                <span className="text-[#A3B18A] uppercase tracking-[0.4em] font-black text-[10px]">Fundamentos Clínicos</span>
+                <h2 className="font-serif text-4xl md:text-7xl text-[#8B5E52] mt-4">Minha Abordagem</h2>
+              </div>
+              <div className="grid md:grid-cols-3 gap-12">
+                {MARA_PERSONAL_DATA.approach?.map((item, i) => (
+                  <div key={i} className="group">
+                    <div className="w-16 h-16 rounded-2xl bg-[#A3B18A]/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
+                      <Icon name={item.icon} className="w-8 h-8 text-[#A3B18A]" />
+                    </div>
+                    <h3 className="font-serif text-2xl md:text-3xl text-[#8B5E52] mb-4">{item.title}</h3>
+                    <p className="text-lg text-[#8B5E52]/70 leading-relaxed font-light">{item.description}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex-1 w-full h-[400px] md:h-[600px] rounded-[3rem] overflow-hidden shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-700">
-               <img src="https://images.unsplash.com/photo-1544027994-3fd996f01905?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover" alt="Ambiente Mara" />
+          </section>
+
+          {/* TRAJETÓRIA ACADÊMICA */}
+          <section className="py-32 px-8 md:px-32 bg-[#F5E6E0]/20">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-20">
+              <div className="flex-1">
+                <span className="text-[#A3B18A] uppercase tracking-[0.4em] font-black text-[10px]">Autoridade e Estudo</span>
+                <h2 className="font-serif text-4xl md:text-7xl text-[#8B5E52] mt-4 mb-8">Trajetória e Especialização</h2>
+                <p className="text-xl text-[#8B5E52]/80 leading-relaxed font-light mb-12">O estudo contínuo é o que me permite oferecer um suporte ético e atualizado às demandas complexas da vida moderna.</p>
+                <div className="grid grid-cols-2 gap-8">
+                  {MARA_PERSONAL_DATA.stats.map((s, i) => (
+                    <div key={i} className="border-l-2 border-[#A3B18A] pl-6 py-2">
+                      <span className="block text-3xl font-black text-[#8B5E52]">{s.value}</span>
+                      <span className="text-[10px] uppercase tracking-widest text-[#A3B18A] font-bold">{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex-1 space-y-12">
+                {MARA_PERSONAL_DATA.timeline?.map((item, i) => (
+                  <div key={i} className="flex gap-8 group">
+                    <span className="text-xl font-black text-[#A3B18A] tabular-nums">{item.year}</span>
+                    <div>
+                      <h4 className="font-serif text-2xl text-[#8B5E52] group-hover:translate-x-2 transition-transform">{item.title}</h4>
+                      <p className="text-[#8B5E52]/60 font-medium uppercase tracking-widest text-[10px] mt-1">{item.institution}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
 
+          {/* MODALIDADES (REUTILIZADA COM ESTILO PESSOAL) */}
           <section className="py-32 px-8 md:px-32 bg-[#8B5E52] text-white">
             <div className="max-w-7xl mx-auto">
               <div className="text-center mb-20">
@@ -347,6 +492,22 @@ const App: React.FC = () => {
             </div>
           </section>
 
+          {/* FAQ */}
+          <section className="py-32 px-8 md:px-32 bg-white">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-20">
+                <span className="text-[#A3B18A] uppercase tracking-[0.4em] font-black text-[10px]">Esclarecimentos</span>
+                <h2 className="font-serif text-4xl md:text-7xl text-[#8B5E52] mt-4">Dúvidas Frequentes</h2>
+              </div>
+              <div className="space-y-4">
+                {MARA_PERSONAL_DATA.faq?.map((item, i) => (
+                  <FAQItem key={i} question={item.question} answer={item.answer} />
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* FOOTER PERSONAL */}
           <section className="py-32 px-8 md:px-32 flex flex-col items-center text-center bg-[#fdfaf9]">
             <h2 className="font-serif text-5xl md:text-[8rem] text-[#8B5E52] mb-12 leading-none">Inicie sua jornada.</h2>
             <a href={MARA_PERSONAL_DATA.links[0].url} className="px-16 py-8 bg-[#8B5E52] text-white rounded-[2rem] text-xl font-bold uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-6">
@@ -366,7 +527,10 @@ const App: React.FC = () => {
       <header className="flex items-center justify-between mb-4 md:mb-6 animate-fade-up shrink-0">
         <div className="flex items-center gap-4 md:gap-6">
           <div 
-            onClick={toggleProfile}
+            onClick={() => {
+               const mara = BEM_ALI_DATA.team?.find(m => m.name.includes("Mara"));
+               if (mara) handleOpenStaffSheet(mara);
+            }}
             className="w-16 h-16 md:w-24 md:h-24 rounded-full glass p-1 animate-float shadow-xl border-2 border-white relative z-50 shrink-0 cursor-pointer group"
           >
             <div className="absolute -inset-1 bg-gradient-to-tr from-[#A3B18A]/20 to-transparent rounded-full animate-pulse opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -413,16 +577,25 @@ const App: React.FC = () => {
           <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em]">Agendar</span>
         </a>
 
-        <div className="col-span-6 row-span-3 glass rounded-3xl p-4 md:p-6 flex flex-col justify-center shadow-sm">
-          <div className="flex items-center gap-3 mb-2 md:mb-4">
-            <h4 className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] font-black text-[#A3B18A]">Nossa Equipe</h4>
+        <div className="col-span-6 row-span-4 glass rounded-[2.5rem] p-4 md:p-6 flex flex-col justify-center shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <h4 className="text-[8px] md:text-[11px] uppercase tracking-[0.3em] font-black text-[#A3B18A]">Corpo Clínico Especializado</h4>
             <div className="h-px flex-1 bg-gradient-to-r from-[#e8d8d2] to-transparent" />
           </div>
-          <div className="grid grid-cols-3 gap-2 md:gap-4 overflow-hidden">
+          <div className="grid grid-cols-3 gap-3 md:gap-6 overflow-hidden px-2">
             {BEM_ALI_DATA.team?.map((m, i) => (
-              <div key={i} className="flex flex-col min-w-0">
-                <span className="text-[9px] md:text-xs font-bold text-[#8B5E52] truncate">{m.name.split(' ').slice(0, 2).join(' ')}</span>
-                <span className="text-[7px] md:text-[9px] text-[#A3B18A] font-black uppercase mt-0.5">{m.role.split(' ')[0]}</span>
+              <div 
+                key={i} 
+                className="flex flex-col items-center text-center group cursor-pointer" 
+                onClick={() => handleOpenStaffSheet(m)}
+              >
+                <div className="w-12 h-12 md:w-20 md:h-20 rounded-full overflow-hidden border-2 border-white shadow-md mb-2 group-hover:scale-110 transition-transform duration-500">
+                  <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[9px] md:text-[11px] font-bold text-[#8B5E52] leading-tight truncate px-1">{m.name.split(' ').slice(0, 2).join(' ')}</span>
+                  <span className="text-[7px] md:text-[9px] text-[#A3B18A] font-black uppercase mt-0.5 tracking-tighter">CRP {m.crp.split(' ')[1] || m.crp}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -432,13 +605,19 @@ const App: React.FC = () => {
       </main>
 
       <BottomSheet isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)} service={selectedService} data={BEM_ALI_DATA} />
+      <StaffBottomSheet 
+        isOpen={isStaffSheetOpen} 
+        onClose={() => setIsStaffSheetOpen(false)} 
+        staff={selectedStaff}
+        onSeeFullProfile={toggleProfile}
+      />
       {isSwitching && <TransitionOverlay label="Abrindo perfil de Mara Magalhães..." />}
     </div>
   );
 };
 
 const TransitionOverlay = ({ label }: { label: string }) => (
-  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#fdfaf9]/90 backdrop-blur-xl animate-pulse">
+  <div className="fixed inset-0 z-[500] flex items-center justify-center bg-[#fdfaf9]/90 backdrop-blur-xl animate-pulse">
     <div className="flex flex-col items-center gap-6 text-center px-8">
       <div className="w-24 h-24 rounded-full border-4 border-t-[#8B5E52] border-[#A3B18A]/20 animate-spin"></div>
       <p className="font-serif text-3xl text-[#8B5E52] italic">{label}</p>
