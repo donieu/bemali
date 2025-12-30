@@ -8,49 +8,70 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
     <style>
       * {
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
+        box-sizing: border-box;
       }
       body {
         font-family: 'Inter', sans-serif;
         background-color: #fdfcfb;
-        background-image: radial-gradient(#ede7e1 0.5px, transparent 0.5px);
-        background-size: 20px 20px;
+        background-image: radial-gradient(#ede7e1 0.7px, transparent 0.7px);
+        background-size: 24px 24px;
         overflow: hidden;
         height: 100vh;
         width: 100vw;
         color: #4a3f35;
+        margin: 0;
       }
       .font-serif {
         font-family: 'Playfair Display', serif;
       }
       .glass {
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.7);
-        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.02);
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 4px 20px rgba(74, 63, 53, 0.03);
       }
       .bento-item {
-        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
         cursor: pointer;
+        overflow: hidden;
       }
       .bento-item:hover {
-        transform: scale(1.02);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 12px 30px rgba(74, 63, 53, 0.06);
       }
-      .bento-item:active {
-        transform: scale(0.98);
+      
+      @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
       }
+      .animate-marquee {
+        display: flex;
+        width: max-content;
+        animation: marquee 40s linear infinite;
+      }
+
       @keyframes fadeUp {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
       }
       .animate-fade-up {
-        animation: fadeUp 0.8s ease-out forwards;
+        animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes floating {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-5px); }
+        100% { transform: translateY(0px); }
+      }
+      .animate-float {
+        animation: floating 4s ease-in-out infinite;
       }
     </style>
   <script type="importmap">
