@@ -527,10 +527,7 @@ const App: React.FC = () => {
       <header className="flex items-center justify-between mb-4 md:mb-6 animate-fade-up shrink-0">
         <div className="flex items-center gap-4 md:gap-6">
           <div 
-            onClick={() => {
-               const mara = BEM_ALI_DATA.team?.find(m => m.name.includes("Mara"));
-               if (mara) handleOpenStaffSheet(mara);
-            }}
+            onClick={toggleProfile}
             className="w-16 h-16 md:w-24 md:h-24 rounded-full glass p-1 animate-float shadow-xl border-2 border-white relative z-50 shrink-0 cursor-pointer group"
           >
             <div className="absolute -inset-1 bg-gradient-to-tr from-[#A3B18A]/20 to-transparent rounded-full animate-pulse opacity-0 group-hover:opacity-100 transition-opacity"></div>
