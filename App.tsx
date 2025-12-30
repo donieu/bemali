@@ -8,19 +8,42 @@ import { Icon } from './components/Icon';
 
 const FAQItem = memo(({ question, answer }: { question: string, answer: string }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const itemRef = useRef<HTMLDivElement>(null);
+
+  const handleToggle = () => {
+    const willOpen = !isOpen;
+    setIsOpen(willOpen);
+    
+    // Executa a rolagem suave se o item estiver sendo aberto
+    if (willOpen && itemRef.current) {
+      // Pequeno delay via requestAnimationFrame para garantir que o DOM atualizou
+      requestAnimationFrame(() => {
+        itemRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      });
+    }
+  };
+
   return (
-    <div className="border-b border-[#8B5E52]/10 py-6">
+    <div 
+      ref={itemRef} 
+      className="border-b border-[#8B5E52]/10 py-6 scroll-mt-32 transition-colors duration-300"
+    >
       <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex justify-between items-center text-left"
+        onClick={handleToggle}
+        className="w-full flex justify-between items-center text-left group focus:outline-none"
       >
-        <span className="text-xl md:text-2xl font-serif text-[#8B5E52]">{question}</span>
-        <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+        <span className={`text-xl md:text-2xl font-serif transition-colors duration-300 ${isOpen ? 'text-[#A3B18A]' : 'text-[#8B5E52]'}`}>
+          {question}
+        </span>
+        <div className={`transition-transform duration-500 ease-out ${isOpen ? 'rotate-180 text-[#A3B18A]' : 'text-[#8B5E52]/40'}`}>
           <Icon name="chevron-right" className="w-6 h-6 rotate-90" />
         </div>
       </button>
-      <div className={`overflow-hidden transition-all duration-500 ${isOpen ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
-        <p className="text-lg text-[#8B5E52]/70 leading-relaxed">{answer}</p>
+      <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+        <p className="text-lg text-[#8B5E52]/70 leading-relaxed max-w-2xl">{answer}</p>
       </div>
     </div>
   );
@@ -53,7 +76,13 @@ const StaffBottomSheet = memo(({ isOpen, onClose, staff, onSeeFullProfile }: {
 
           <div className="flex flex-col items-center text-center mb-12">
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl mb-6 scale-110">
-              <img src={staff.avatar} alt={staff.name} className="w-full h-full object-cover" />
+              <img 
+                src={staff.avatar} 
+                alt={staff.name} 
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover" 
+              />
             </div>
             <h3 className="font-serif text-3xl md:text-5xl text-[#8B5E52] font-bold mb-2">{staff.name}</h3>
             <p className="text-[#A3B18A] font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">{staff.role} • CRP {staff.crp}</p>
@@ -388,7 +417,13 @@ const App: React.FC = () => {
           >
             <div className="flex items-center gap-3 pr-2">
               <div className="w-8 h-8 rounded-full border border-white overflow-hidden">
-                 <img src={BEM_ALI_DATA.avatar} className="w-full h-full object-cover" alt="Bem Ali" />
+                 <img 
+                    src={BEM_ALI_DATA.avatar} 
+                    className="w-full h-full object-cover" 
+                    alt="Bem Ali" 
+                    loading="lazy"
+                    decoding="async"
+                 />
               </div>
               <span className="text-[9px] font-black uppercase tracking-widest text-[#8B5E52] hidden group-hover:block transition-all">Ir para Institucional</span>
             </div>
@@ -397,7 +432,12 @@ const App: React.FC = () => {
           {/* HERO PERSONALIZADO */}
           <section className="h-[90vh] md:h-screen w-full relative flex flex-col items-center justify-end md:justify-center p-8 md:p-24 overflow-hidden">
             <div className="absolute inset-0 z-0">
-              <img src={MARA_PERSONAL_DATA.avatar} className="w-full h-full object-cover grayscale-[20%] sepia-[10%] opacity-90 transition-transform duration-[10s] hover:scale-110" alt="Mara Magalhães" />
+              <img 
+                src={MARA_PERSONAL_DATA.avatar} 
+                className="w-full h-full object-cover grayscale-[20%] sepia-[10%] opacity-90 transition-transform duration-[10s] hover:scale-110" 
+                alt="Mara Magalhães" 
+                decoding="async"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-[#fdfaf9] via-[#fdfaf9]/30 to-transparent"></div>
             </div>
             <div className="relative z-10 text-center md:text-left md:w-full">
@@ -531,7 +571,12 @@ const App: React.FC = () => {
             className="w-16 h-16 md:w-24 md:h-24 rounded-full glass p-1 animate-float shadow-xl border-2 border-white relative z-50 shrink-0 cursor-pointer group"
           >
             <div className="absolute -inset-1 bg-gradient-to-tr from-[#A3B18A]/20 to-transparent rounded-full animate-pulse opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <img src={BEM_ALI_DATA.avatar} alt="Logo Bem Ali" className="w-full h-full object-cover rounded-full" />
+            <img 
+                src={BEM_ALI_DATA.avatar} 
+                alt="Logo Bem Ali" 
+                className="w-full h-full object-cover rounded-full" 
+                decoding="async"
+            />
             <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-md border border-[#A3B18A]/20">
               <Icon name="star" className="w-3 h-3 text-[#A3B18A]" />
             </div>
@@ -576,7 +621,7 @@ const App: React.FC = () => {
 
         <div className="col-span-6 row-span-4 glass rounded-[2.5rem] p-4 md:p-6 flex flex-col justify-center shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <h4 className="text-[8px] md:text-[11px] uppercase tracking-[0.3em] font-black text-[#A3B18A]">Corpo Clínico Especializado</h4>
+            <h4 className="text-bold text-[8px] md:text-[11px] uppercase tracking-[0.3em] font-black text-[#A3B18A]">Corpo Clínico Especializado</h4>
             <div className="h-px flex-1 bg-gradient-to-r from-[#e8d8d2] to-transparent" />
           </div>
           <div className="grid grid-cols-3 gap-3 md:gap-6 overflow-hidden px-2">
@@ -586,8 +631,14 @@ const App: React.FC = () => {
                 className="flex flex-col items-center text-center group cursor-pointer" 
                 onClick={() => handleOpenStaffSheet(m)}
               >
-                <div className="w-12 h-12 md:w-20 md:h-20 rounded-full overflow-hidden border-2 border-white shadow-md mb-2 group-hover:scale-110 transition-transform duration-500">
-                  <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" />
+                <div className="w-12 h-12 md:w-20 md:h-20 rounded-full overflow-hidden border-2 border-white shadow-md mb-2 group-hover:scale-105 transition-transform duration-500">
+                  <img 
+                    src={m.avatar} 
+                    alt={m.name} 
+                    className="w-full h-full object-cover" 
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-[9px] md:text-[11px] font-bold text-[#8B5E52] leading-tight truncate px-1">{m.name.split(' ').slice(0, 2).join(' ')}</span>
